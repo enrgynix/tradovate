@@ -1,0 +1,8 @@
+# ignore Node modules
+node_modules
+
+# Ignore bin for developer helper scripts
+bin
+
+# Ignore private env variables which may contain passwords, secret keys, etc.
+env-private

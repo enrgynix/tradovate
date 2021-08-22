@@ -8,8 +8,7 @@
  * @param {Object} params.payload
  * @returns {Object}
  */
-// export function onHistogram({state,payload}) {
-module.exports = function({state,payload}) {
+function onHistogram({state,payload}) {
 		
 	// Extract the Tradovate `histograms` object from the payload
 	let { histograms } = payload || [];
@@ -40,3 +39,5 @@ module.exports = function({state,payload}) {
 
 	return state;
 }
+
+module.exports = onHistogram;

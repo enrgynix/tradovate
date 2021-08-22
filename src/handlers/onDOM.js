@@ -2,14 +2,13 @@
 
 /**
  * @function onDOM
- * @description Parses the 
+ * @description Parses the DOMs message type
  * @param {Object} params
  * @param {Object} params.state
  * @param {Object} params.payload
  * @returns {Object}
  */
-// export function onDOM({state,payload} = { state: {}, payload: {}}) {
-module.exports = function({state,payload} = { state: {}, payload: {}}) {
+function onDOM({state,payload} = { state: {}, payload: {}}) {
 	
 	// Extract the Tradovate `doms` object from the payload
 	let { doms } = payload || [];
@@ -24,3 +23,5 @@ module.exports = function({state,payload} = { state: {}, payload: {}}) {
 
 	return state;
 }
+
+module.exports = onDOM

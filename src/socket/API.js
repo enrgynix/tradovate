@@ -1,9 +1,36 @@
-const Socket = require('./Socket.cjs');
+// API.cjs
 
+
+// Require the parent Socket superclass
+const Socket = require('./Socket.js');
+
+/**
+ * @class API
+ * @description Extends the Socket class with API functional endpoints
+ * We extend the generic `Socket` class and give it access to all of the Tradovate API endpoints, as defined in https://api.tradovate.com/ 
+ * Because the API structure is generally '/endpointFamilyName/actualEndpointName/', we give the Socket (API) class additional class properties
+ * at the endpointFamilyName level (e.g., order/, command/, md/), with nested functional properties containing the actual endpoints (e.g., order/placeOrder)
+ * This allows us to make calls rather simply as socket.family.endpoint({ query: data, body: data }) as appropriate
+ * Where available, JSDoc has been attempted for each endpoint, but HIGHLY recommend looking at the official API docs for detailed explanations
+ * of endpoints in the event documentation here is incomplete or improperly formatted due to templatting issues
+ *
+ * Note: All endpoints will be defined as <API Class>.<familyName>.<endpoint>({ query: data, body: data }) and 
+ * will call the <Socket Class>.request() function with an embedded URL and the query / body as applicable
+ * @param {Object} args The Socket superclass arguments
+ */
 class API extends Socket {
+
+	// Call the constructor and embed the additional API endpoint fields in the class `this`
     constructor(...args) {
+
+		// Call the super to ensure we carry any appropriate properties
         super(...args);
+
+		// Assign a pointer by reference to `this`, so that we can access it within the function definitions
+		// (if not, the `this` scope changes to this.<familyName>.<functionName> scope or else is undefined)
         let API = this;
+
+		// Start adding families and endpoints
 
 		this.md = {
 

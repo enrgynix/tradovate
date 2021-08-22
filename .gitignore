@@ -5,4 +5,19 @@ node_modules
 bin
 
 # Ignore private env variables which may contain passwords, secret keys, etc.
-env-private
+env
+
+# Ignore the .DS_Store
+.DS_Store
+
+# Ignore our own private authentication variables
+auth.js
+
+# Ignore the documentation generation
+out
+
+# Ignore the session file for security reasons
+sessionFile.json
+
+# Ignore the yarn lock file since folks will generate their own
+yarn.lock

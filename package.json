@@ -1,5 +1,5 @@
 {
-  "name": "autotrader",
+  "name": "tradovate-autotrader",
   "version": "1.0.0",
   "description": "An automated trading system for the Tradovate API",
   "main": "index.js",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": true,
   "bin": {
-    "autotrader": "cli.js"
+    "tradovate-autotrader": "cli.js"
   },
   "dependencies": {
     "@babel/polyfill": "^7.12.1",

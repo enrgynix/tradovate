@@ -1,9 +1,21 @@
+// connect.cjs
+// Establishes some logic for initially connecting to the Tradovate REST API and retrieving a token.
+// Note, this logic is largely adapted from the Tradovate example documentation at 
+// https://github.com/tradovate/example-api-js/tree/main/tutorial/Access
 
+// The Tradovate example application uses the npm 'device-uuid' module for a client side web application.
+// Node.js doesn't give access to the `window`, `navigator` or `browser` objects since it is server-side,
+// so we use the npm 'uuid' module instead to generate a device identifier for authentication.
 const { v4 } = require('uuid');
 const DeviceUUID = v4;
-const { USER, PASS, CID, SEC } = require('../env.cjs');
-const { setDeviceId, getDeviceId, setAccessToken, getAccessToken, tokenIsValid, setAvailableAccounts, getAvailableAccounts } = require('./storage.cjs');
-const { tvPost, tvGet } = require('./services.cjs');
+
+// Retrieve the necessary auth parameters from a separate auth file.
+// Ensure you modify the auth-template provided and rename it appropriately!
+const { USER, PASS, CID, SEC, APPID, APPVERSION } = require('../auth.js');
+
+// Grab some helper functions from supporting files
+const { setDeviceId, getDeviceId, setAccessToken, getAccessToken, tokenIsValid, setAvailableAccounts, getAvailableAccounts } = require('./storage.js');
+const { tvPost, tvGet } = require('./services.js');
 
 //set device ID, behaves differently for browser and mobile device.
 const deviceID = function() {
@@ -14,6 +26,8 @@ const deviceID = function() {
 	return DEVICE_ID;
 }
 
+// Tradovate uses p-tickets and captchas for throttling, refer to https://api.tradovate.com/#section/Server-Frames and 
+// https://github.com/tradovate/example-api-js/tree/main/tutorial/Access/EX-3-Time-Penalty
 const handleRetry = async (data, json) => {
     const ticket    = json['p-ticket'],
           time      = json['p-time'],
@@ -30,22 +44,25 @@ const handleRetry = async (data, json) => {
     await connect({ ...data, 'p-ticket': ticket })   
 }
 
+// Attempt to asynchronously connect to the REST API
 const connect = async (data) => {
 
     if (!data) {
         data = {
             name:       USER,
             password:   PASS,
-            appId:      "Sample App",
-            appVersion: "1.0",
+            appId:      APPID,
+            appVersion: APPVERSION,
             cid:        CID,
             sec:        SEC,
             deviceId:   deviceID(),
         }
     }
 
+    // Retrieve our current token and expiration, if we have one
     let { token, expiration } = getAccessToken()
 
+    // If we have a token, get our accounts and return out early
     if(token && tokenIsValid(expiration)) {
         const accounts = await tvGet('/account/list')
         setAvailableAccounts(accounts)
@@ -63,8 +80,10 @@ const connect = async (data) => {
         return
     }
 
+    // If we didn't have a token or valid expiration, proceed to request a new one
     const authResponse = await tvPost('/auth/accesstokenrequest', data, false)
 
+    // Handle a p-ticket or error if encountered, else store token, accounts, etc
     if(authResponse['p-ticket']) {
         return await handleRetry(data, authResponse) 
     } else {
@@ -85,6 +104,7 @@ const connect = async (data) => {
     }
 }
 
+// Helper function to enforce a timeout if we encounter time penalties
 const waitForMs = t => {
     return new Promise((res) => {
         setTimeout(() => {
@@ -93,4 +113,5 @@ const waitForMs = t => {
     })
 }
 
+// The only critical function to export here is connect()
 module.exports = connect;

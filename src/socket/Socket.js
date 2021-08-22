@@ -1,22 +1,20 @@
 // Socket.js
 // Implements the main infrastructure for a class-based Tradovate-protocol WebSocket
 
+
 const $param = require('jquery-param');
-const getJSON = require('../utils/getJSON.cjs');
-const { getAccessToken, getAvailableAccounts } = require('../utils/storage.cjs');
+const { getJSON } = require('../utils/helpers.js');
+const { getAccessToken, getAvailableAccounts } = require('../utils/storage.js');
 
 /**
  * Constructor for the Socket superclass
- * @param {string} log
  * @param {string} url
  * @param {string} startTimestamp optional, only if attempting to run a replay
- * 
  */
 class Socket {
-    constructor({url, log, startTimestamp}) {
+    constructor({url, startTimestamp}) {
         this.ws = null
         this.counter = new Counter()
-        this.log = log;
         this.url = url;
         this.startTimestamp = startTimestamp;
     }

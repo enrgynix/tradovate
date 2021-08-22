@@ -1,12 +1,18 @@
+// services.cjs
+// Largely adapted from the Tradovate example docs at https://github.com/tradovate/example-api-js/blob/main/tutorial/Access/EX-4-Test-Request/src/services.js
+// Provides a Tradovate-specific GET and POST request for interrogating the REST API
 
-// NOTE: May fail if `replay`
-const { URLs } = require('./enum.cjs');
-const { getAccessToken } = require('./storage.cjs');
+// TODO: May fail if `replay`
+const { URLs } = require('./enum.js');
+const { getAccessToken } = require('./storage.js');
+
+// polyfill the browser Fetch API so that we can simplify our REST API requests without much reconfiguration from the Tradovate docs
 const fetch = require('node-fetch');
 
 // TODO
 const URL = URLs?.d?.url;
 
+// Tradovate REST API GET request
 const tvGet = async (endpoint, query = null) => {
     const { token } = getAccessToken()
     try {
@@ -41,6 +47,8 @@ const tvGet = async (endpoint, query = null) => {
     }
 }
 
+// Tradovate REST API POST request
+// Only fires if we have a token
 const tvPost = async (endpoint, data, _usetoken = true) => {
     const { token } = getAccessToken()
     const bearer = _usetoken ? { Authorization: `Bearer ${token}` } : {} 

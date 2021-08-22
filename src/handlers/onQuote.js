@@ -8,8 +8,7 @@
  * @param {Object} params.payload
  * @returns {Object}
  */
-// export function onQuote({state,payload}) {
-module.exports = function({state,payload}) {
+function onQuote({state,payload}) {
 	
 	// Extract the Tradovate `quotes` object from the payload
 	let { quotes } = payload || [];
@@ -59,3 +58,5 @@ module.exports = function({state,payload}) {
 
 	return state;
 }
+
+module.exports = onQuote;

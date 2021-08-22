@@ -1,11 +1,17 @@
-// Define "require"
+// SubStrategy.js
+// Write your own custom definition here
 
+// jStat and simple-statistics are two useful modules for some statistical efforts and regressions, if that is a part of your strategy.
+// jStat is mainly used for abstracting certain array functions, e.g., min() and max()
 const jStat = require('jStat');
-const { NaNZero, round, LinReg, StDev, Indexify } = require('../utils/helpers.cjs');
-const latestTimestamp = require('../utils/latestTimestamp.cjs');
-const Strategy = require('./Strategy.cjs');
-const { red, magenta, yellow, green } = require('../utils/logger.cjs');
-const { decisionInterval } = require('../env.cjs');
+// https://simplestatistics.org/docs/#linearregression
+const ss = require('simple-statistics');
+const StDev = ss.standardDeviation;
+
+const { latestTimestamp, NaNZero, round, red, magenta } = require('../utils/helpers.js');
+
+const Strategy = require('./Strategy.js');
+const { decisionInterval } = require('../env.js');
 
 /**
  * @class SubStrategy
@@ -218,7 +224,8 @@ class SubStrategy extends Strategy {
 		this.state.askBias = askBias;
 		this.state.bidBias = bidBias;
 
-		console.log(`${volumes.length} ${sigma.toFixed(2)} ${green(this.state.entryPrice.toFixed(2))} <- ${bidBias.toFixed(2)} <- ${yellow(lastPrice.toFixed(2))} -> ${askBias.toFixed(2)} -> ${red(this.state.exitPrice.toFixed(2))} lambda${lambda.toFixed(2)} = T${T.toFixed(2)} x Z${Z.toFixed(2)} x (H${H.toFixed(2)} --> hA${hawkes.ask.toFixed(2)} hB${hawkes.bid.toFixed(2)}) x V${V.toFixed(2)} beta${beta.toFixed(2)} k${shapeFactor.toFixed(2)} gamma${gamma.toFixed(2)}`); // openingPrice);
+		console.log(volumes.length);
+		// console.log(`${volumes.length} ${sigma.toFixed(2)} ${green(this.state.entryPrice.toFixed(2))} <- ${bidBias.toFixed(2)} <- ${yellow(lastPrice.toFixed(2))} -> ${askBias.toFixed(2)} -> ${red(this.state.exitPrice.toFixed(2))} lambda${lambda.toFixed(2)} = T${T.toFixed(2)} x Z${Z.toFixed(2)} x (H${H.toFixed(2)} --> hA${hawkes.ask.toFixed(2)} hB${hawkes.bid.toFixed(2)}) x V${V.toFixed(2)} beta${beta.toFixed(2)} k${shapeFactor.toFixed(2)} gamma${gamma.toFixed(2)}`); // openingPrice);
 		
 	}
 

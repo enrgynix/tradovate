@@ -1,20 +1,18 @@
-const { getAccessToken, getAvailableAccounts } = require('../utils/storage.cjs');
+const { getAccessToken, getAvailableAccounts } = require('../utils/storage.js');
 
-const API = require('./API.cjs');
+const API = require('./API.js');
 const WebSocket       = require('ws');
 
 /**
  * TradovateSocket
  * Subclass of API, so it possesses all of the endpoints
- * Implements the connect(), disconnect(), and synchronize() functions
- * @param
+ * Implements the connect() and disconnect() functions
  */
 class TradovateSocket extends API {
 	
     /**
      * Constructor
      * @param {string} url
-     * @param {boolean} log
      * @param {object} startTimestamp
      */
 	constructor(...args) {
@@ -22,18 +20,15 @@ class TradovateSocket extends API {
 	}
 
     /**
-     * Connect
-     * Connects the WebSocket to the server URL by sending an authorization token, initializes the 
+     * connect
+     * @description Connects the WebSocket to the server URL by sending an authorization token, initializes the 
      * heartbeat interval, assigns notional JSON parsing for event messages, and a closure action.
      * 
-     * @param {boolean} heartbeat 
-     * @param {boolean} replay
-     * @returns 
+     * @returns {Promise} Returns the JSON.parsed() of the first message received if resolved, else rejects with an empty response
      */
-    async connect(heartbeat = false) {
+    async connect() {
         
         if(!this.ws || this.ws.readyState == 3 || this.ws.readyState == 2) {
-            
             this.ws = new WebSocket(this.url);
         }
 
@@ -72,7 +67,6 @@ class TradovateSocket extends API {
                                 clearInterval(interval)
                                 return
                             }
-                            if (heartbeat) console.log('sending response heartbeat...')
                             this.ws.send('[]')
                             console.log(`[] ${(new Date()).toISOString()}`)
                         }, 2500)
@@ -86,7 +80,6 @@ class TradovateSocket extends API {
                      * the form of an empty array, stringified ('[]')
                      */
                     case 'h':
-                        if (heartbeat) console.log('received server heartbeat...')
                         break;
                     
                     /**
@@ -94,11 +87,9 @@ class TradovateSocket extends API {
                      * Array of JSON-encoded messages. For example: 'a[{"data": "value"}]'.
                      */
                     case 'a':
-                        const parsedData = JSON.parse(msg.data.slice(1))
 
-                        if (this.log) parsedData.forEach(data=>data.d && console.log(data.d));
-                        
-                        const [first] = parsedData
+                        const parsedData = JSON.parse(msg.data.slice(1));
+                        const [first] = parsedData;
 
                         if(first.i === 0 && first.s === 200) {
 
@@ -140,33 +131,12 @@ class TradovateSocket extends API {
     /**
      * Disconnect
      * Closes the client websocket, with a 1000ms delay in the event we want to implement any closing actions
+     * By default, no special action is taken around closing positions. If you want that functionality, you will
+     * need to add it separately
      */
-    disconnect(liquidate = false) {
+    disconnect() {
         console.log('closing websocket connection')
-
-        /* Implement closing actions */
-
         this.ws.close(1000, `Client initiated disconnect.`)
-    }
-
-    isConnected() {
-        return this.ws && this.ws.readyState != 2 && this.ws.readyState != 3;
-    }
-
-    /**
-     * Synchronize
-     * Makes a synchronization request with the current user account to get all the current account info
-     * @returns Promise with the result of the syncRequest call
-     */
-    async synchronize() {
-
-        if (!this.isConnected()) {
-            console.warn('no websocket connection available, please connect the websocket and try again.')
-            return;
-        }
-
-        return await this.user.syncRequest({ body: { users: [getAvailableAccounts()[0].userId] } });
-        
     }
 
 }

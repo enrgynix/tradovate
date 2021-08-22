@@ -1,9 +1,5 @@
 // onChart.js
 
-const jStat = require('jStat');
-const sum = jStat.sum;
-const min = jStat.min;
-const max = jStat.max;
 /**
  * @function onChart
  * @description Parses the Chart payload
@@ -12,8 +8,7 @@ const max = jStat.max;
  * @param {Object} params.payload
  * @returns {Object}
  */
-// export function onChart({state,payload}) {
-module.exports = function({state,payload}) {
+function onChart({state,payload}) {
 	
 	// Extract the Tradovate `charts` object from the payload
 	let { charts } = payload || [];
@@ -39,6 +34,7 @@ module.exports = function({state,payload}) {
 			// Handle end of history
 			if (eoh) {
 				// Historical ticks are loaded
+				// Currently we have no additional logic for handling these
 			}
 
 			// Handle standard bar chart if the subscription matches our target subscription
@@ -59,7 +55,6 @@ module.exports = function({state,payload}) {
 				
 				if (id === barSubscription?.realtimeId || id === barSubscription?.historicalId) {
 					
-					
 					const maybe = _bars[_bars.length - 1]?.timestamp === timestamp;
 					if (!maybe) {
 						_bars.push(bar);
@@ -78,18 +73,6 @@ module.exports = function({state,payload}) {
 
 				}
 
-				// if (state?.barSubscription?.elementSize === 1) {
-				// 	state.bars.push(bar);
-				// } else {
-				// 	const maybe = state.bars[state.bars.length - 1]?.timestamp === timestamp;
-				// 	// const maybe = state.bars.findIndex((obj) => obj.timestamp === timestamp);
-				// 	if (maybe || maybe >= 0) {
-				// 		state.bars[state.bars.length - 1] = bar;
-				// 		// state.bars[maybe] = bar;
-				// 	} else {
-				// 		state.bars.push(bar);
-				// 	}
-				// }
 			})
 
 			// Handle tick chart objects by building a readable tick and storing it
@@ -136,3 +119,5 @@ module.exports = function({state,payload}) {
 	return state;
 
 }
+
+module.exports = onChart;

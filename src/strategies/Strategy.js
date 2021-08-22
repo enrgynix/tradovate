@@ -1,12 +1,17 @@
-const { red, magenta, yellow, green } = require('../utils/logger.cjs');
-const { OrdStatus, TdData } = require("../utils/enum.cjs");
-const latestTimestamp = require("../utils/latestTimestamp.cjs");
-const { last } = require("../utils/helpers.cjs");
-const onEvent = require("../handlers/onEvent.cjs");
+const { OrdStatus, TdData } = require("../utils/enum.js");
+const { last, yellow, latestTimestamp } = require("../utils/helpers.js");
+const onEvent = require("../handlers/onEvent.js");
 
 /**
- * @class OrderSingleton
- * @description Single-instance class for order management, mainly used to determine the state of a hesitation as 
+ * @class Strategy
+ * @description General template for a strategy, helper functions are abstracted
+ * Recommend implementing overrides for `workingNoPos`, `workingNetPos`, `inactiveNoPos`, `inactiveNetPos`, `trimPosition`, and `alpha`.
+ * Please DO NOT OVERRIDE other functions in your subclass.
+ * 
+ * Calls the `next` function on every message received, determines how to handle it, and determines our current state (hesitating, or free to act
+ * and manage orders).
+ * 
+ * Single-instance class for order management, mainly used to determine the state of a hesitation as 
  * the system waits for pending or critical asynchronous information after an API endpoint request.
  * 
  * Typically, a request (e.g., `socket.order.placeOrder()`) will receive a near-immediate response (e.g., `200: { orderId: 123456 }`),
@@ -17,14 +22,12 @@ const onEvent = require("../handlers/onEvent.cjs");
  * 
  * Although we enforce that API requests are `async/await`, ***because*** they are `async`, it's still possible that multiple calls are 
  * received in an overlapping `await` time period. To counter this, prior to entering the `await`, the `pending` array (hacky, but effective)
- * is used to ensure we are not `pending` an `await` in a parallel `async` call.
- */
-/**
- * @class Strategy
- * @description General template for a strategy, helper functions are abstracted
+ * is used to ensure we are not `pending` an `await` in a parallel `async` call. It's a bit of a race condition manager.
  * @param {Object} params
- * @param {Object} socket Tradovate WebSocket class
- * @param {Integer} symbol Fixed symbol for trading against
+ * @param {Object} params.socket Tradovate WebSocket class
+ * @param {number} params.symbol Fixed symbol for trading against, typically an integery
+ * @param {string} params.accountSpec The Tradovate account specification, notionally a string, e.g. DEMO123456 or ABC123456
+ * @param {number} params.accountId The Tradovate account id, typically a number like 123456
  */
 class Strategy {
     constructor({socket, symbol, accountSpec, accountId}) {
@@ -82,8 +85,8 @@ class Strategy {
     }
 
     /**
-     * @function next
-     * @description Inspired by the Tradovate spec, takes a reference to the current `state`, the `event` string, and the event `payload`
+     * next
+     * @description **DO NOT OVERRIDE** Inspired by the Tradovate spec, takes a reference to the current `state`, the `event` string, and the event `payload`
      * and calls subhandlers to handle the `payload`, update the alpha / signal if appropriate in the case of a data `event`, and 
      * further manage orders and perform any garbage-collection type housekeeping optimizations
      * 
@@ -135,8 +138,8 @@ class Strategy {
     }
 
     /**
-     * @function alpha
-     * @description Takes in the current state, attempts to infer meaning from the current market data, and determine order signals 
+     * alpha
+     * @description **IMPLEMENT OVERRIDE** Takes in the current state, attempts to infer meaning from the current market data, and determine order signals 
      * This function is intended to be extended in the child class, but deliberately has no definition in the parent class
      * in order to ensure purity of logic
      */
@@ -146,8 +149,8 @@ class Strategy {
 
 
     /**
-     * @function manageOrders
-     * @description Takes in the current state, attempts to infer meaning from the current 
+     * manageOrders
+     * @description **DO NOT OVERRIDE** Takes in the current state, attempts to infer meaning from the current 
      * order state and custom parameters, and act on order signals
      * The assumption is that we only have ONE contract to deal with, so the navigational logic
      * for determining order state is lightweight
@@ -163,11 +166,12 @@ class Strategy {
         let workingOrders = this.workingOrders();
 
         // Because we only operate ONE contract at a time, the latest timestamp observed in the `positions` array should represent the latest state of our position
+		// TODO: At all times, because of `insertionUpdate`, the ***1*** position in `positions` should be our current position
         let { netPos } = latestTimestamp(positions);
         
-        if (netPos > maxPosition) {
+        if (Math.abs(netPos) > Math.abs(maxPosition)) {
             // We are in a risky position which is a bit overleveraged, so we need to trim our position
-            await this.trimPosition(maxPosition - netPos);
+            await this.trimPosition(netPos);
 
         } else if (workingOrders?.length && netPos) {
             // We have (a) working order(s), and are currently holding a net position
@@ -185,7 +189,7 @@ class Strategy {
             await this.inactiveNetPos();
 
         } else if (!(workingOrders?.length) && !netPos) {
-            // We have no working orders, and are not holding a net position
+			// We have no working orders, and are not holding a net position
             // e.g., 0 net position, no working orders and generally flat on market, waiting for a signal
             await this.inactiveNoPos();
 
@@ -194,7 +198,7 @@ class Strategy {
     }
 
     /**
-     * @function housekeeping
+     * housekeeping
      * @description Custom efficiency function, attempts to optimize search and filtering by splicing out
      * old data and dead orders.
      * 
@@ -233,29 +237,54 @@ class Strategy {
 
     }
 
+	/**
+	 * trimPosition
+	 * @description **IMPLEMENT OVERRIDE** Safety function to trim any quantity over the max position limit you define
+	 * We are in a risky position which is a bit overleveraged, so we need to trim our position  
+	 * @param {number} qty 
+	 */
     async trimPosition(qty) {
         this.state.log && console.log('over max positions, trimming');
     }
-    
+
+	/**
+	 * workingNetPos
+	 * @description **IMPLEMENT OVERRIDE** We have (a) working order(s), and are currently holding a net position
+	 * e.g., +1 net position, working sell order (or working bracket TP & SL)      
+	 */
     async workingNetPos() {
         this.state.log && console.log('working, position');
     }
     
+	/**
+	 * workingNoPos
+	 * @description **IMPLEMENT OVERRIDE** We have (a) working order(s), but are not holding a net position
+	 * e.g., 0 net position, working buy order to enter (or multiple buy orders in a grid)
+	 */
     async workingNoPos() {
         this.state.log && console.log('working, no position');
     }
 
+	/**
+	 * inactiveNetPos
+	 * @description **IMPLEMENT OVERRIDE** We have no working orders, but are holding a net position
+     * e.g., +1 net position, no active sell orders due to market close auto-cancellation of unfilled orders     
+	 */
     async inactiveNetPos() {
         this.state.log && console.log('inactive, position');
     }
-
+	/**
+	 * inactiveNoPos
+	 * @description **IMPLEMENT OVERRIDE** Triggered if we determine we have no working orders, and are not holding a net position
+     * e.g., 0 net position, no working orders and generally flat on market, waiting for a signal    
+	 */
     async inactiveNoPos() {
         this.state.log && console.log('inactive, no position');
     }
 
     /**
-     * @function timestamp
-     * @returns {Integer} timestamp in milliseconds, either relative to the replay session or based on the current moment
+     * timestamp
+     * @returns {number} **DO NOT OVERRIDE** timestamp in milliseconds, either relative to the replay session or based on the current moment
      */
     timestamp() {
         let { clock } = this.state;
@@ -263,9 +292,9 @@ class Strategy {
     }
 
 	/**
-	 * @function isAllowedTradingTime
-	 * @description checks if the clock is within the allowable trading session hours, if the hours are given
-	 * @returns {Boolean}
+	 * isAllowedTradingTime
+	 * @description **DO NOT OVERRIDE** checks if the clock is within the allowable trading session hours, if the hours are given
+	 * @returns {boolean}
 	 */
 	isAllowedTradingTime() {
 		let currentTime = new Date(this.timestamp()); // (clock && (clock.replay + (Date.now() - clock.current))) || Date.now();
@@ -303,8 +332,8 @@ class Strategy {
     }
 
 	/** 
-	 * @function isCancelOrder
-	 * @description checks if a cancellation is still pending, but if complete, it splices out the cancellation object from the `cancelOrder` `hesitation` array
+	 * isCancelOrder
+	 * @description **DO NOT OVERRIDE** checks if a cancellation is still pending, but if complete, it splices out the cancellation object from the `cancelOrder` `hesitation` array
 	 * @returns {Boolean} 
 	 */
 	isCancelOrder() {
@@ -354,8 +383,8 @@ class Strategy {
 	}
 		
 	/**
-	 * @function isLiquidatePosition
-	 * @description Checks `liquidatePosition` requests against `orders` and `commands` to determine if we need to hesitate
+	 * isLiquidatePosition
+	 * @description **DO NOT OVERRIDE** Checks `liquidatePosition` requests against `orders` and `commands` to determine if we need to hesitate
 	 * 
 	 * NOTE: only processes the ***last*** `liquidatePosition` request, so not intended to manage multiple brackets 
 	 * concurrently.
@@ -392,8 +421,8 @@ class Strategy {
 	}
 
 	/**
-	 * @function isModifyOrder
-	 * @description Checks `modifyOrder` requests against `orders` and `commands` to determine if we need to hesitate
+	 * isModifyOrder
+	 * @description **DO NOT OVERRIDE** Checks `modifyOrder` requests against `orders` and `commands` to determine if we need to hesitate
 	 * 
 	 * NOTE: only processes the ***last*** `modifyOrder` request, so not intended to manage multiple brackets 
 	 * concurrently.
@@ -437,8 +466,8 @@ class Strategy {
 	}
 
 	/**
-	 * @function isPlaceOCO
-	 * @description Checks `placeOCO` requests against `orders` to determine if we need to hesitate
+	 * isPlaceOCO
+	 * @description **DO NOT OVERRIDE** Checks `placeOCO` requests against `orders` to determine if we need to hesitate
 	 * NOTE: only processes the ***last*** `placeOCO` request, so not intended to manage multiple brackets 
 	 * concurrently.
 	 * @returns {Boolean}
@@ -467,8 +496,8 @@ class Strategy {
 	}
 
 	/**
-	 * @function isPlaceOrder
-	 * @description Checks `placeOrder` requests against `orders` to determine if we need to hesitate
+	 * isPlaceOrder
+	 * @description **DO NOT OVERRIDE** Checks `placeOrder` requests against `orders` to determine if we need to hesitate
 	 * NOTE: only processes the ***last*** `placeOrder` request, so not intended to manage multiple brackets 
 	 * concurrently.
 	 * @returns {Boolean}
@@ -496,8 +525,8 @@ class Strategy {
 	}
 
 	/**
-	 * @function isPlaceOSO
-	 * @description Checks `placeOSO` requests against `orders` to determine if we need to hesitate
+	 * isPlaceOSO
+	 * @description **DO NOT OVERRIDE** Checks `placeOSO` requests against `orders` to determine if we need to hesitate
 	 * NOTE: only processes the ***last*** `placeOSO` request, so not intended to manage multiple brackets 
 	 * concurrently.
 	 * @returns {Boolean}
@@ -526,11 +555,20 @@ class Strategy {
 
 	}
 
+	/**
+	 * handleError
+	 * @description **DO NOT OVERRIDE** Checks if we received an error and if so, safely handles it via logging.
+	 * If we have an error, the truthy return keeps us trapped in a hesitation, so while the algorithm won't fail on an error,
+	 * no further action will be taken
+	 * @param {Object} param 
+	 * @param {string} param.failureReason
+	 * @param {string} param.failureText
+	 * @returns {boolean}
+	 */
 	handleError({failureReason, failureText}) {
 		
 		// If we encounter a failure, throw an error
 		if (failureReason || failureText) {
-			// this.killed = true;
 			failureReason && console.error(failureReason);
 			failureText && console.error(failureText);
 			return true;
@@ -540,8 +578,8 @@ class Strategy {
 	}
 
 	/**
-	 * @function isHesitant
-	 * @description Takes in the `orders` and `commands` arrays, and evaluates them against various endpoint `hesitation` checks 
+	 * isHesitant
+	 * @description **DO NOT OVERRIDE** Takes in the `orders` and `commands` arrays, and evaluates them against various endpoint `hesitation` checks 
 	 * to ensure we have received all the critical data from an `async` WebSocket API request before allowing additional order
 	 * management behavior to take place.
 	 * @returns {Boolean}

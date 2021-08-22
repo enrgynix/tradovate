@@ -8,8 +8,7 @@
  * @param {Object} params.payload
  * @returns {Object}
  */
-// export function onUserSync({state,payload}) {
-module.exports = function({state,payload}) {
+function onUserSync({state,payload}) {
 	
 	// Extract the Tradovate `props` parent objects from the payload
 	let { 
@@ -66,3 +65,5 @@ module.exports = function({state,payload}) {
 
 	return state;
 }
+
+module.exports = onUserSync;

@@ -65,7 +65,7 @@ const green = text => `\x1b[32m${text}\x1b[0m`;
  * @param {Object} params.entity A `props` entity
  * @param {String} params.sharedKey The UID key of a `props` entity 
  */
-function insertionUpdate(params={state,entityType,entity,sharedKey}) {
+function insertionUpdate({state,entityType,entity,sharedKey}) {
 
 	// Determine if an `entity` with the `sharedKey` is present in the `entityType` array
 	// If present, overwrite it; if not, push it into the array
@@ -124,8 +124,8 @@ module.exports = {
 	magenta,
 	yellow,
 	green,
-  last,
-  NaNZero,
-  round,
-  sigmoid
+	last,
+	NaNZero,
+	round,
+	sigmoid
 }

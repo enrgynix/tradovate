@@ -44,12 +44,6 @@ class Strategy {
             barSubscription: {},
             tickSubscription: {},
 			volumeSubscription: {},
-            delays: {
-                workingNetPos: 0,
-                workingNoPos: 0,
-                inactiveNetPos: 0,
-                inactiveNoPos: 0
-            },
             ...arguments?.[0]
         };
         

@@ -52,7 +52,7 @@ module.exports = {
 	getHistograms: true,
 	
 	// Subscribe to DOM updates
-	getDOMs: false,
+	getDOMs: true,
 	
 	// Subscribe to a volume chart for order flow
 	getVolumes: true,

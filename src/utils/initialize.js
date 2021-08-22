@@ -2,7 +2,7 @@
 
 const TradovateSocket = require('../socket/TradovateSocket.js');
 const { getAvailableAccounts } = require('./storage.js');
-const config = require('../config.js');
+const { Strategy, config } = require('../config.js');
 const { getJSON } = require('./helpers.js');
 const { URLs } = require('./enum.js');
 const { 
@@ -24,20 +24,20 @@ const {
 	getDOMs, 
 	getHistograms, 
 	getQuotes, 
-	maxPosition 
+	maxPosition, 
+	log: True
 } = require('../env.js');
 
 /**
  * configure
  * @description Takes in a Strategy and some CLI fields, initializes our WebSockets, initializes a Strategy, assigns WebSocket eventListeners to handle
  * incoming messages, and subscribes to the target symbol and market data.
- * @param {Strategy} Strategy 
  * @param {Object} params
  * @param {string} params.env A CLI field (-e: r, d, l) to designate whether we want replay, demo, or live trading environment
  * @param {string} params.startTimestamp An optional CLI field (-r: 2021-08-17T15:00:00.000Z) to designate the desired start time for replay trading
  * @param {boolean} params.allowOrders An optional CLI field (-o) to designate if we want to allow ordering
  */
-async function configure(Strategy, { env, startTimestamp, allowOrders }) {
+async function initialize({ env, startTimestamp, allowOrders }) {
 
 	// Grab the URLs from the `env` field
 	let wss = URLs?.[env]?.wss;
@@ -114,7 +114,7 @@ async function configure(Strategy, { env, startTimestamp, allowOrders }) {
 			// This acts as a rudimentary lock to eliminate race conditions if multiple triggers (i.e., messages) are received before an event (`props`) promise is resolved
 			if (data?.i) strategy.state.socket.counter.received = data?.i;
 
-			event && payload && strategy.next({state: strategy.state, event, payload});
+			event && payload && strategy.update({state: strategy.state, event, payload});
 		})
 	});
 
@@ -141,7 +141,7 @@ async function configure(Strategy, { env, startTimestamp, allowOrders }) {
 				replay: new Date(payload.t).getTime()
 			}
 
-			event && payload && strategy.next({state: strategy.state, event, payload});
+			event && payload && strategy.update({state: strategy.state, event, payload});
 		})
 	});
 
@@ -218,4 +218,4 @@ async function configure(Strategy, { env, startTimestamp, allowOrders }) {
 	
 }
 
-module.exports = configure;
+module.exports = initialize;

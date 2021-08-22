@@ -2,7 +2,7 @@
 
 **`tradovate-autotrader`** is a lightweight Node.js app built on the [Tradovate API](https://api.tradovate.com/) designed for simple strategies and basic order management.
 
-Tradovate uses a WebSocket API to manage orders and positions through your account in a Demo, Live, or Replay environment. This app gives you the components to quickly and easily define basic strategies and ordering logic.
+Tradovate uses a WebSocket API to manage orders and positions through your account in a Demo, Live, or Replay environment. This app gives you the components to quickly and easily define basic strategies and ordering logic. This app is designed to be event-driven and asynchronous. In special cases to ensure order handling integrity, synchronous blocking is enforced. 
 
 ## Features
 * Single symbol order management

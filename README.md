@@ -58,4 +58,4 @@ Ensure you provide a timestamp to start replay on in ISO 8601 format. An easy wa
 
 ## Warning
 
-While ordering via API is possible, please be sure to test your strategy thoroughly in demo and replay first. This package is not liable for your trading activity and automated trading capability is not financial advice!
+While ordering via API is possible, please be sure to test your strategy thoroughly in demo and replay first. This package is not liable for your trading activity and automated trading capability is not financial advice! Further, this app / framework is not endorsed or supported in any way by Tradovate.

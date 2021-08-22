@@ -25,8 +25,8 @@ class SubStrategy extends Strategy {
 		super(...args);
 	}
 
-	async next(...args) {
-		super.next(...args);
+	async update(...args) {
+		super.update(...args);
 	}
 
 	alpha(...args) {

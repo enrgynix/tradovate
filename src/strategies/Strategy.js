@@ -8,7 +8,7 @@ const onEvent = require("../handlers/onEvent.js");
  * Recommend implementing overrides for `workingNoPos`, `workingNetPos`, `inactiveNoPos`, `inactiveNetPos`, `trimPosition`, and `alpha`.
  * Please DO NOT OVERRIDE other functions in your subclass.
  * 
- * Calls the `next` function on every message received, determines how to handle it, and determines our current state (hesitating, or free to act
+ * Calls the `update` function on every message received, determines how to handle it, and determines our current state (hesitating, or free to act
  * and manage orders).
  * 
  * Single-instance class for order management, mainly used to determine the state of a hesitation as 
@@ -85,7 +85,7 @@ class Strategy {
     }
 
     /**
-     * next
+     * update
      * @description **DO NOT OVERRIDE** Inspired by the Tradovate spec, takes a reference to the current `state`, the `event` string, and the event `payload`
      * and calls subhandlers to handle the `payload`, update the alpha / signal if appropriate in the case of a data `event`, and 
      * further manage orders and perform any garbage-collection type housekeeping optimizations
@@ -97,7 +97,7 @@ class Strategy {
      * @param {String} params.event The event type from the WebSocket message, e.g., histograms, doms, usersync, props
      * @param {Object} params.payload The actual message body
      */
-    async next({state, event, payload}) {
+    async update({state, event, payload}) {
         
 		let start = Date.now();
 

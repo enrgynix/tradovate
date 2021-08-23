@@ -1,6 +1,6 @@
 # Automated Trader for the Tradovate API
 
-**`tradovate-autotrader`** is a lightweight Node.js app built on the [Tradovate API](https://api.tradovate.com/) designed for simple strategies and basic order management.
+**`tradovate-autotrader`** is an example, lightweight Node.js app illustrating one approach to using the [Tradovate API](https://api.tradovate.com/). It is designed for simple strategies and basic order management.
 
 Tradovate uses a WebSocket API to manage orders and positions through your account in a Demo, Live, or Replay environment. This app gives you the components to quickly and easily define basic strategies and ordering logic. This app is designed to be event-driven and asynchronous. In special cases to ensure order handling integrity, synchronous blocking is enforced. 
 
@@ -49,9 +49,6 @@ Finally, test it out in the CLI.
 Ensure you provide a timestamp to start replay on in ISO 8601 format. An easy way to grab this is via `(new Date(2021, 8, 22, 9, 30)).toISOString()` in a browser console.
 
 ```$ tradovate-autotrader -e r -r 2021-08-17T15:00:00.000Z```
-
-#### Live account
-```$ tradovate-autotrader -e l```
 
 #### With ordering enabled
 ```$ tradovate-autotrader -e d -o```
